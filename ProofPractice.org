@@ -1,0 +1,10 @@
+* General
+
+* Queue
+
+** TODO First bite: prove =−max f = min(−f)= over a nonempty finite action set (core of Fard & Pineau Thm 1)
+*** TODO Step 1 — State in English + sketch the proof on paper (don't open Lean yet)
+*** TODO Step 2 — Monte-Carlo it: random finite lists, check =-max(xs) == min(-x for x in xs)=
+*** TODO Step 3 — Write Lean statement with =:= by sorry= and audit it (is the action set NONEMPTY?)
+*** TODO Step 4 — Prove it: find the real Mathlib lemma via =exact?=/Loogle, LLM proposes & Lean judges
+*** TODO Step 5 — Record the hidden hypothesis the proof forced out (Π(s) ≠ ∅) back into my notes

@@ -1,0 +1,14 @@
+name = "ProofPractice"
+version = "0.1.0"
+defaultTargets = ["proofpractice"]
+
+[[lean_lib]]
+name = "ProofPractice"
+
+[[lean_exe]]
+name = "proofpractice"
+root = "Main"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
