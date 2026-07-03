@@ -1,0 +1,220 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\supp}{sup'}
+\DeclareMathOperator*{\infp}{inf'}
+
+% Blank line for the student to fill in
+\newcommand{\blank}{\par\vspace{2pt}\noindent\textcolor{gray}{\rule{0.96\linewidth}{0.4pt}}\par
+  \noindent\textcolor{gray}{\rule{0.96\linewidth}{0.4pt}}\par\vspace{6pt}}
+% Shorter single blank
+\newcommand{\blankone}{\textcolor{gray}{\rule{0.6\linewidth}{0.4pt}}}
+
+\title{Negation Flips \texorpdfstring{$\max$}{max} to \texorpdfstring{$\min$}{min}:\\
+  Fard \& Pineau (2011), (20)$\to$(21) --- \emph{Student Fill-In Version}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\fbox{\parbox{0.9\linewidth}{\small\textit{Instructions: the structure, equations,
+and step labels are given. Fill in the prose in your own words on the blank
+lines. If you can explain every blank correctly, you understand the proof.}}}
+\end{center}
+
+\vspace{1em}
+
+% ==========================================================================
+\section{The Original Result}
+
+\emph{What is the evaluation MDP $M'$, and how are $A'$ and $R'$ defined in terms
+of the original?}
+\blank
+
+\begin{theorem}[Fard \& Pineau, Thm.~1]
+\[
+  Q^{\Pi}_M(s,a) \;=\; -\,Q^{*}_{M'}(s,a).
+\]
+\end{theorem}
+
+\emph{In one line, what does the proof do to get from the Bellman equation on
+$M'$ to the claim?}
+\blank
+
+\begin{align}
+  Q^{*}_{M'}(s,a)
+    &= \bar R'(s,a) + \gamma \sum_{s'} T(s,a,s') \max_{a' \in A'} Q^{*}_{M'}(s',a')
+      \tag{19}\\[2pt]
+  \Rightarrow\; -Q^{*}_{M'}(s,a)
+    &= -\bar R'(s,a) - \gamma \sum_{s'} T(s,a,s') \max_{a' \in A'} Q^{*}_{M'}(s',a')
+      \tag{20}\\[2pt]
+  \Rightarrow\; -Q^{*}_{M'}(s,a)
+    &= \bar R(s,a) + \gamma \sum_{s'} T(s,a,s') \min_{a' \in \Pi(s')}\!\bigl(-Q^{*}_{M'}(s',a')\bigr).
+      \tag{21}
+\end{align}
+
+\emph{Between (20) and (21), which changes are purely definitional substitutions,
+and which single change is the real inference?}
+\blank
+
+\emph{State the one substantive identity being used:}
+\[
+  \phantom{-\max_{a'} Q \;=\; \min_{a'}(-Q)}
+\]
+\blankone
+
+\emph{What hypothesis (from Definition~1) is implicit here but cannot be skipped
+in a formalization? Why is it needed?}
+\blank
+
+% ==========================================================================
+\section{The Formalization, Step by Step}
+
+\emph{How does the bare identity translate: what do the action set, the
+$Q$-value, and $\max/\min$ become? What does the primed $\supp$/$\infp$ require
+as an argument, and why?}
+\blank
+
+\begin{equation}
+  -\,\supp_{a \in A} Q(a) \;=\; \infp_{a \in A}\bigl(-Q(a)\bigr).
+  \tag{$\star$}
+\end{equation}
+
+\subsection*{Overall strategy}
+
+\emph{To prove an equality of two reals, what do we prove instead, and how are
+the two directions related?}
+\blank
+
+\textbf{Reshape.} \emph{What does a reshape step do, using which identities, and
+does it change what is true?}
+\blank
+
+\textbf{Close.} \emph{What kind of fact closes a branch? List the four defining
+facts about $\max/\min$ used.}
+\blank
+
+\subsection*{Direction 1: \texorpdfstring{$-\supp_a Q \le \infp_a(-Q)$}{-sup Q <= inf(-Q)}}
+
+\begin{enumerate}
+  \item \textbf{Reduce to elements.} \emph{Why does the RHS being a minimum let
+    us reduce to a per-element statement?}
+    \blank
+    \[
+      -\,\supp_{a'} Q(a') \;\le\; -Q(a). \qquad (\forall\, a \in A)
+    \]
+  \item \textbf{Fix an arbitrary $a$.} \emph{Why does proving it for a generic
+    $a$ suffice for all elements? How is this different from a loop?}
+    \blank
+  \item \textbf{Reshape.} \emph{What is the shape of the goal, which identity
+    applies, and what does the goal become?}
+    \blank
+    \[
+      Q(a) \;\le\; \supp_{a'} Q(a').
+    \]
+  \item \textbf{Close.} \emph{Which defining fact finishes this, and why does it
+    match?}
+    \blank
+\end{enumerate}
+
+\subsection*{Direction 2: \texorpdfstring{$\infp_a(-Q) \le -\supp_a Q$}{inf(-Q) <= -sup Q}}
+
+\emph{How does this direction relate to Direction 1?}
+\blankone
+
+\begin{enumerate}
+  \item \textbf{Reshape \#1.} \emph{What shape is the goal, which identity
+    applies, and what gets exposed?}
+    \blank
+    \[
+      \supp_{a'} Q(a') \;\le\; -\,\infp_{a'}\bigl(-Q(a')\bigr).
+    \]
+  \item \textbf{Reduce to elements.} \emph{Why can we now reduce to a per-element
+    statement?}
+    \blank
+    \[
+      Q(a) \;\le\; -\,\infp_{a'}\bigl(-Q(a')\bigr). \qquad (\forall\, a \in A)
+    \]
+  \item \textbf{Fix an arbitrary $a$.}
+  \item \textbf{Reshape \#2.} \emph{Same identity as \#1 --- what does it expose
+    this time?}
+    \blank
+    \[
+      \infp_{a'}\bigl(-Q(a')\bigr) \;\le\; -Q(a).
+    \]
+  \item \textbf{Close.} \emph{Which defining fact finishes this, and against
+    which element?}
+    \blank
+\end{enumerate}
+
+\emph{With both directions done, what lets us conclude the equality~$(\star)$,
+and how does $(\star)$ relate to the paper's (20)$\to$(21) step?}
+\blank
+
+\subsection*{Two remarks}
+
+\begin{itemize}
+  \item \textbf{``Fix an arbitrary $a$'' is not a loop.} \emph{Explain.}
+    \blank
+  \item \textbf{Non-emptiness is load-bearing.} \emph{Explain what breaks
+    without it, and how the mechanization treats it.}
+    \blank
+\end{itemize}
+
+% ==========================================================================
+\appendix
+\section{Lean 4 Source --- annotate each line yourself}
+
+\emph{For each tactic below, write in the margin: is it a} Reshape \emph{or a}
+Close\emph{, and what is the goal before/after? (Full source intentionally given;
+the comments are removed so you supply them.)}
+
+\begin{verbatim}
+import Mathlib
+open Finset
+
+theorem neg_max_eq_min_neg
+    {Action : Type*}
+    (actions : Finset Action)
+    (h_nonempty : actions.Nonempty)
+    (Q : Action -> R) :
+    - actions.sup' h_nonempty Q
+      = actions.inf' h_nonempty (fun x => - Q x) := by
+  apply le_antisymm
+  . apply Finset.le_inf'
+    intro a ha
+    rw [neg_le_neg_iff]
+    exact Finset.le_sup' Q ha
+  . rw [le_neg]
+    apply Finset.sup'_le
+    intro a ha
+    rw [le_neg]
+    exact Finset.inf'_le (fun x => - Q x) ha
+\end{verbatim}
+
+\emph{Questions to answer for the appendix:}
+\begin{itemize}
+  \item Why does \code{apply le\_antisymm} produce exactly two goals?
+    \blankone
+  \item What does \code{intro a ha} destructure, and where does the type of
+    \code{a} come from? \blankone
+  \item Why is \code{h\_nonempty} passed around even though it contributes no
+    number to the answer? \blankone
+  \item In the last line, what are the two arguments to \code{Finset.inf'\_le},
+    and what does the applied lambda reduce to? \blankone
+\end{itemize}
+
+\end{document}

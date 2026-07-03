@@ -1,0 +1,281 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+% ---- Theorem environments ----
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+
+% ---- Equation numbering to match the paper (19)-(21) ----
+
+
+% ---- Lean listing style (used only in the final code appendix) ----
+\definecolor{leancomment}{RGB}{106,153,85}
+\definecolor{leankeyword}{RGB}{150,60,170}
+\definecolor{leanbg}{RGB}{246,246,246}
+
+\lstdefinelanguage{Lean}{
+  morekeywords={theorem,def,by,apply,intro,exact,rw,simp,fun,trace_state,
+    open,import,let,have,show,Type,Prop},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]",
+}
+
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  commentstyle=\color{leancomment}\itshape,
+  keywordstyle=\color{leankeyword}\bfseries,
+  backgroundcolor=\color{leanbg},
+  frame=single,
+  framesep=6pt,
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+}
+
+% Inline monospace that does NOT trigger listings coloring
+\newcommand{\code}[1]{\texttt{#1}}
+
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\supp}{sup'}
+\DeclareMathOperator*{\infp}{inf'}
+
+\title{Negation Flips \texorpdfstring{$\max$}{max} to \texorpdfstring{$\min$}{min}:\\
+  The (20)$\to$(21) Step of Fard \& Pineau (2011), Formalized in Lean}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note isolates and formalizes the single genuine inference in the proof of
+Theorem~1 of Fard \& Pineau (2011), \emph{Non-Deterministic Policies in Markovian
+Decision Processes} (JAIR 40, pp.~1--24): the move from equation~(20) to
+equation~(21), in which negating a maximization is rewritten as a minimization
+of the negation. Section~\ref{sec:paper} reproduces the mathematical statement
+and its short paper-style proof. Section~\ref{sec:lean} translates the Lean
+formalization step by step into ordinary mathematics. The complete Lean~4
+(Mathlib) source is collected in the appendix.
+\end{abstract}
+
+% ==========================================================================
+\section{The Original Result}
+\label{sec:paper}
+
+The paper evaluates a non-deterministic policy $\Pi$ by constructing an
+\emph{evaluation MDP} $M' = (S, A', R', T, \gamma)$ with $A' = \Pi$ and
+$R' = -R$, and proving:
+
+\begin{theorem}[Fard \& Pineau, Thm.~1]
+The negated value of the non-deterministic policy $\Pi$ equals the value of the
+optimal policy on the evaluation MDP:
+\[
+  Q^{\Pi}_M(s,a) \;=\; -\,Q^{*}_{M'}(s,a).
+\]
+\end{theorem}
+
+The proof negates the Bellman optimality equation on $M'$ and pushes the
+negation inside the optimization. Written out, the key steps are:
+\begin{align}
+  Q^{*}_{M'}(s,a)
+    &= \bar R'(s,a) + \gamma \sum_{s'} T(s,a,s') \max_{a' \in A'} Q^{*}_{M'}(s',a')
+      \tag{19}\\[2pt]
+  \Rightarrow\; -Q^{*}_{M'}(s,a)
+    &= -\bar R'(s,a) - \gamma \sum_{s'} T(s,a,s') \max_{a' \in A'} Q^{*}_{M'}(s',a')
+      \tag{20}\\[2pt]
+  \Rightarrow\; -Q^{*}_{M'}(s,a)
+    &= \bar R(s,a) + \gamma \sum_{s'} T(s,a,s') \min_{a' \in \Pi(s')}\!\bigl(-Q^{*}_{M'}(s',a')\bigr).
+      \tag{21}
+\end{align}
+
+Two of the three changes between~(20) and~(21) are purely definitional
+substitutions from the construction of $M'$: $-\bar R'(s,a) = \bar R(s,a)$
+(since $R' = -R$) and $A' = \Pi$. The one substantive inference is the
+transformation
+\[
+  -\max_{a'} Q^{*}_{M'}(s',a')
+  \;=\;
+  \min_{a'}\bigl(-Q^{*}_{M'}(s',a')\bigr),
+\]
+i.e.\ that negation reverses the order and thereby turns the maximizer into the
+minimizer. This identity is what Section~\ref{sec:lean} formalizes in full.
+
+Note also a hypothesis the prose leaves implicit but the formalization cannot:
+by Definition~1 of the paper, $\Pi(s)$ must be a \emph{non-empty} set of actions.
+The quantities $\max$ and $\min$ over $\Pi(s')$ are only well-defined under this
+assumption; in Lean it must be supplied explicitly as an argument.
+
+% ==========================================================================
+\section{The Formalization, Step by Step}
+\label{sec:lean}
+
+We strip the surrounding MDP away and formalize the bare identity. The action
+set becomes a finite set $A$ (Mathlib's \code{Finset}), the optimal $Q$-value
+$Q^{*}_{M'}(s',\cdot)$ becomes an arbitrary function $Q : A \to \R$, and
+$\max/\min$ become Mathlib's $\supp$ and $\infp$ (the primed variants are the
+max/min taken over a \emph{non-empty} finite set; the non-emptiness proof
+$h$ is a required argument, exactly the Definition~1 hypothesis above). The
+claim is
+\begin{equation}
+  -\,\supp_{a \in A} Q(a) \;=\; \infp_{a \in A}\bigl(-Q(a)\bigr).
+  \tag{$\star$}\label{eq:star}
+\end{equation}
+
+\subsection*{Overall strategy}
+
+To prove an equality of two reals, prove $\le$ in both directions
+(antisymmetry of $\le$). The two directions are mirror images across the
+$\max \leftrightarrow \min$ axis. Within each, only two kinds of step occur:
+\begin{description}
+  \item[Reshape.] A reversible sign-flip identity
+    ($-x \le -y \iff y \le x$, or $x \le -y \iff y \le -x$) moves negations
+    across $\le$ until the buried $\supp$ or $\infp$ is exposed on the side the
+    next fact needs. Truth is unchanged; only the shape of the goal changes.
+  \item[Close.] A defining fact about $\max/\min$ discharges a branch: any
+    element's value is $\le$ the max; the min is $\le$ any element's value; and
+    dually, to bound a min from below (or a max from above) it suffices to bound
+    every element.
+\end{description}
+
+\subsection*{Direction 1: \texorpdfstring{$-\supp_a Q \le \infp_a(-Q)$}{-sup Q <= inf(-Q)}}
+
+\begin{enumerate}
+  \item \textbf{Reduce to elements.} The right-hand side is a minimum. To show
+    $c \le \min$, it suffices to show $c \le$ every term the minimum ranges over.
+    So the goal becomes: for every $a \in A$,
+    \[
+      -\,\supp_{a'} Q(a') \;\le\; -Q(a).
+    \]
+  \item \textbf{Fix an arbitrary $a$.} We prove the statement for a generic
+    $a \in A$, using nothing specific about which element it is; this discharges
+    all elements at once.
+  \item \textbf{Reshape.} Both sides are negated, i.e.\ the goal has the form
+    $-x \le -y$. Applying $-x \le -y \iff y \le x$ strips the negations and
+    flips the sides:
+    \[
+      Q(a) \;\le\; \supp_{a'} Q(a').
+    \]
+  \item \textbf{Close.} This is exactly the defining property of the supremum:
+    any element's value is at most the maximum. Done.
+\end{enumerate}
+
+\subsection*{Direction 2: \texorpdfstring{$\infp_a(-Q) \le -\supp_a Q$}{inf(-Q) <= -sup Q}}
+
+This is the mirror of Direction~1, with $\max$ and $\min$ swapped.
+
+\begin{enumerate}
+  \item \textbf{Reshape \#1.} The goal has the form $x \le -y$ (only the right
+    side negated). Applying $x \le -y \iff y \le -x$ moves the negation across,
+    exposing the maximum on the left:
+    \[
+      \supp_{a'} Q(a') \;\le\; -\,\infp_{a'}\bigl(-Q(a')\bigr).
+    \]
+  \item \textbf{Reduce to elements.} The left-hand side is now a maximum. To
+    show $\max \le c$, it suffices to show every term is $\le c$. The goal
+    becomes: for every $a \in A$,
+    \[
+      Q(a) \;\le\; -\,\infp_{a'}\bigl(-Q(a')\bigr).
+    \]
+  \item \textbf{Fix an arbitrary $a$}, as before.
+  \item \textbf{Reshape \#2.} The goal again has the form $x \le -y$. The same
+    sign-flip identity now exposes the minimum on the left:
+    \[
+      \infp_{a'}\bigl(-Q(a')\bigr) \;\le\; -Q(a).
+    \]
+  \item \textbf{Close.} This is exactly the defining property of the infimum:
+    the minimum is at most any element's value --- here the element $-Q(a)$.
+    Done.
+\end{enumerate}
+
+Both directions established, antisymmetry gives the equality~\eqref{eq:star},
+which is precisely the $-\max = \min(-\,\cdot)$ identity underlying the paper's
+step (20)$\to$(21). \qed
+
+\subsection*{Two remarks}
+
+\begin{itemize}
+  \item \textbf{``Fix an arbitrary $a$'' is not a loop.} A single argument about
+    a generic element, using no fact peculiar to it, settles all elements
+    simultaneously --- even were $A$ infinite. This is the content of a
+    universal proof, and is what the mechanized \code{intro} step performs.
+  \item \textbf{Non-emptiness is load-bearing.} Every $\supp$/$\infp$ above
+    carries the hidden hypothesis that $A \neq \emptyset$; without it the
+    max/min --- and hence the whole identity --- is undefined. The mechanization
+    makes this the paper's Definition~1 condition, promoted from prose to an
+    unskippable argument.
+\end{itemize}
+
+% ==========================================================================
+\appendix
+\section{Lean 4 (Mathlib) Source}
+\label{sec:code}
+
+The complete machine-checked proof. Each comment states the goal \emph{entering}
+the line below it; the two \code{apply}/\code{exact} closing lemmas
+(\code{le\_sup'}, \code{inf'\_le}) and their bound-from-the-other-side duals
+(\code{le\_inf'}, \code{sup'\_le}) are the ``Close'' steps, while
+\code{neg\_le\_neg\_iff} and \code{le\_neg} are the ``Reshape'' steps. The proof
+checks against Lean's standard axioms only (\code{propext},
+\code{Classical.choice}, \code{Quot.sound}).
+
+\begin{lstlisting}
+import Mathlib
+open Finset
+
+theorem neg_max_eq_min_neg
+    {Action : Type*}
+    (actions : Finset Action)
+    (h_nonempty : actions.Nonempty)
+    (Q : Action -> R) :
+    - actions.sup' h_nonempty Q
+      = actions.inf' h_nonempty (fun x => - Q x) := by
+  -- Reduce the equality to two inequalities (<= each direction).
+  apply le_antisymm
+
+  -- ===== DIRECTION 1:  - sup' Q  <=  inf' (-Q) =====
+  -- Goal: - sup' Q <= inf' (fun x => -Q x)
+  -- RHS is a MIN; to bound (something) <= a min, bound it <= every element.
+  . apply Finset.le_inf'
+    -- Goal: forall b in actions, - sup' Q <= - Q b
+    -- Prove the "forall" for an ARBITRARY element (intro destructures the goal:
+    -- a : Action, typed from the forall; ha : a in actions).
+    intro a ha
+    -- Goal: - sup' Q <= - Q a
+    -- RESHAPE. Shape is  -x <= -y ; strip both negations and flip sides.
+    rw [neg_le_neg_iff]
+    -- Goal: Q a <= sup' Q
+    -- CLOSE. Exactly "any element's value <= the max".
+    exact Finset.le_sup' Q ha
+
+  -- ===== DIRECTION 2:  inf' (-Q)  <=  - sup' Q   (mirror of Direction 1) =====
+  -- Goal: inf' (fun x => -Q x) <= - sup' Q
+  -- RESHAPE #1. Shape is  x <= -y ; move negation across to expose sup'.
+  . rw [le_neg]
+    -- Goal: sup' Q <= - inf' (fun x => -Q x)
+    -- LHS is a MAX; to bound a max <= (something), bound every element.
+    apply Finset.sup'_le
+    -- Goal: forall b in actions, Q b <= - inf' (fun x => -Q x)
+    -- Arbitrary element again (fresh a/ha, unrelated to Direction 1's).
+    intro a ha
+    -- Goal: Q a <= - inf' (fun x => -Q x)
+    -- RESHAPE #2. Same lemma le_neg; this time it exposes inf' on the left.
+    rw [le_neg]
+    -- Goal: inf' (fun x => -Q x) <= - Q a
+    -- CLOSE. Exactly "the min <= any element's value". Hand inf'_le the function
+    -- whose min we mean, plus the membership proof ha. The applied lambda
+    -- (fun x => -Q x) a beta-reduces to - Q a, matching the goal.
+    exact Finset.inf'_le (fun x => - Q x) ha
+\end{lstlisting}
+
+\end{document}
