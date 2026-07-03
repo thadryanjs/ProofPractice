@@ -3,9 +3,24 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{xcolor}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  stepnumber=1,
+  frame=single,
+  framesep=6pt,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  xleftmargin=2.5em,
+}
 \usepackage{hyperref}
 
-\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=black}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{definition}{Definition}
@@ -15,11 +30,9 @@
 \DeclareMathOperator*{\supp}{sup'}
 \DeclareMathOperator*{\infp}{inf'}
 
-% Blank line for the student to fill in
-\newcommand{\blank}{\par\vspace{2pt}\noindent\textcolor{gray}{\rule{0.96\linewidth}{0.4pt}}\par
-  \noindent\textcolor{gray}{\rule{0.96\linewidth}{0.4pt}}\par\vspace{6pt}}
-% Shorter single blank
-\newcommand{\blankone}{\textcolor{gray}{\rule{0.6\linewidth}{0.4pt}}}
+% Minimal placeholder for the student to type over
+\newcommand{\blank}{\par\vspace{2pt}\noindent\textbf{[YOUR ANSWER]}\par\vspace{6pt}}
+\newcommand{\blankone}{\textbf{[YOUR ANSWER]}}
 
 \title{Negation Flips \texorpdfstring{$\max$}{max} to \texorpdfstring{$\min$}{min}:\\
   Fard \& Pineau (2011), (20)$\to$(21) --- \emph{Student Fill-In Version}}
@@ -29,11 +42,9 @@
 \begin{document}
 \maketitle
 
-\begin{center}
-\fbox{\parbox{0.9\linewidth}{\small\textit{Instructions: the structure, equations,
-and step labels are given. Fill in the prose in your own words on the blank
-lines. If you can explain every blank correctly, you understand the proof.}}}
-\end{center}
+\noindent\small\textit{Instructions: the structure, equations, and step labels
+are given. Replace each \textbf{[YOUR ANSWER]} with your own explanation. If you
+can fill every one correctly, you understand the proof.}\normalsize
 
 \vspace{1em}
 
@@ -178,11 +189,11 @@ and how does $(\star)$ relate to the paper's (20)$\to$(21) step?}
 \appendix
 \section{Lean 4 Source --- annotate each line yourself}
 
-\emph{For each tactic below, write in the margin: is it a} Reshape \emph{or a}
+\emph{For each tactic below, note: is it a} Reshape \emph{or a}
 Close\emph{, and what is the goal before/after? (Full source intentionally given;
 the comments are removed so you supply them.)}
 
-\begin{verbatim}
+\begin{lstlisting}
 import Mathlib
 open Finset
 
@@ -203,7 +214,7 @@ theorem neg_max_eq_min_neg
     intro a ha
     rw [le_neg]
     exact Finset.inf'_le (fun x => - Q x) ha
-\end{verbatim}
+\end{lstlisting}
 
 \emph{Questions to answer for the appendix:}
 \begin{itemize}
